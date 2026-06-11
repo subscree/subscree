@@ -14,7 +14,7 @@ services:
       retries: 5
 
   server:
-    build: ./server
+    image: ghcr.io/and-ri/nook-server:latest
     ports:
       - "3000:3000"
     environment:
@@ -27,10 +27,7 @@ services:
         condition: service_healthy
 
   web:
-    build:
-      context: ./web
-      args:
-        NEXT_PUBLIC_API_BASE_URL: http://localhost:3000
+    image: ghcr.io/and-ri/nook-web:latest
     ports:
       - "3001:3001"
     depends_on:
