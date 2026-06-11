@@ -16,9 +16,9 @@ services:
   server:
     image: ghcr.io/and-ri/nook-server:latest
     ports:
-      - "3000:3000"
+      - "3001:3001"
     environment:
-      PORT: 3000
+      PORT: 3001
       DATABASE_URL: postgresql://nook:nook@postgres:5432/nook
       JWT_SECRET: ${JWT_SECRET}
       ORIGIN_URL: http://localhost:3001
@@ -31,7 +31,7 @@ services:
     ports:
       - "3001:3001"
     environment:
-      API_BASE_URL: http://server:3000
+      API_BASE_URL: http://server:3001
     depends_on:
       - server
 
