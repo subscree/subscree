@@ -68,8 +68,8 @@ export default function HomePage() {
                 <Separator />
 
                 {/* Features */}
-                <section className="container mx-auto px-4 py-16 max-w-4xl">
-                    <div className="grid gap-4 sm:grid-cols-3">
+                <section className="container mx-auto px-4 py-16 max-w-5xl">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         <FeatureCard
                             icon="📋"
                             title={t('feature1Title')}
@@ -84,6 +84,11 @@ export default function HomePage() {
                             icon="🔔"
                             title={t('feature3Title')}
                             description={t('feature3Desc')}
+                        />
+                        <FeatureCard
+                            icon="👥"
+                            title={t('feature4Title')}
+                            description={t('feature4Desc')}
                         />
                     </div>
                 </section>

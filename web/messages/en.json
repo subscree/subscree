@@ -279,7 +279,9 @@
     "feature2Title": "Spending overview",
     "feature2Desc": "See your monthly spend at a glance. Group by category and spot what's worth keeping.",
     "feature3Title": "Renewal reminders",
-    "feature3Desc": "Know what's renewing in the next 30 days. No more surprise charges."
+    "feature3Desc": "Know what's renewing in the next 30 days. No more surprise charges.",
+    "feature4Title": "Share with your team",
+    "feature4Desc": "Invite colleagues or family to a shared team. Everyone sees the same subscriptions and gets their own reminders."
   },
   "PaymentMethod": {
     "title": "Payment Methods",

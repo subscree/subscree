@@ -38,24 +38,40 @@ async function sumConverted(items, targetCurrency) {
     return total;
 }
 
+// Team ids the user belongs to — reminders cover every team's subscriptions,
+// so each member who must pay gets notified.
+async function teamIdsForUser(userId) {
+    const memberships = await prisma.teamMember.findMany({
+        where:  { userId },
+        select: { teamId: true },
+    });
+    return memberships.map(m => m.teamId);
+}
+
 async function sendPerSubscriptionReminders(user) {
     const now    = new Date();
     const cutoff = new Date(now.getTime() + user.notifyDaysBefore * DAY_MS);
 
+    const teamIds = await teamIdsForUser(user.id);
+    if (!teamIds.length) return;
+
     const due = await prisma.subscription.findMany({
         where: {
-            userId:          user.id,
+            teamId:          { in: teamIds },
             status:          'ACTIVE',
             nextBillingDate: { gte: now, lte: cutoff },
         },
     });
 
     for (const sub of due) {
-        // Skip if we already reminded for this exact billing occurrence.
-        if (sub.reminderSentForDate &&
-            new Date(sub.reminderSentForDate).getTime() === new Date(sub.nextBillingDate).getTime()) {
-            continue;
-        }
+        // Dedupe per (user, subscription, billing occurrence) so multiple team
+        // members can each be reminded, but only once per charge.
+        const already = await prisma.reminderLog.findUnique({
+            where: { userId_subscriptionId_billingDate: {
+                userId: user.id, subscriptionId: sub.id, billingDate: sub.nextBillingDate,
+            } },
+        });
+        if (already) continue;
 
         const html = emailShell(
             `Upcoming payment: ${sub.name}`,
@@ -72,12 +88,11 @@ async function sendPerSubscriptionReminders(user) {
                 html,
                 text:    `${sub.name} renews on ${fmtDate(sub.nextBillingDate)} for ${fmtMoney(sub.amount, sub.currency)}.`,
             });
-            await prisma.subscription.update({
-                where: { id: sub.id },
-                data:  { reminderSentForDate: sub.nextBillingDate },
+            await prisma.reminderLog.create({
+                data: { userId: user.id, subscriptionId: sub.id, billingDate: sub.nextBillingDate },
             });
         } catch (err) {
-            console.error(`[notifications] reminder failed for sub ${sub.id}:`, err.message);
+            console.error(`[notifications] reminder failed for sub ${sub.id} / user ${user.id}:`, err.message);
         }
     }
 }
@@ -92,10 +107,16 @@ async function sendDigest(user) {
         return;
     }
 
+    const teamIds = await teamIdsForUser(user.id);
+    if (!teamIds.length) {
+        await prisma.user.update({ where: { id: user.id }, data: { lastDigestSentAt: now } });
+        return;
+    }
+
     const cutoff = new Date(now.getTime() + periodDays * DAY_MS);
     const upcoming = await prisma.subscription.findMany({
         where: {
-            userId:          user.id,
+            teamId:          { in: teamIds },
             status:          'ACTIVE',
             nextBillingDate: { gte: now, lte: cutoff },
         },
