@@ -23,7 +23,7 @@ describe('POST /auth/register', () => {
         expect(res.body.user.email).toBe('test_auth_new@example.com');
     });
 
-    it('should return 500 on duplicate email', async () => {
+    it('should return 409 on duplicate email', async () => {
         await request(app)
             .post('/auth/register')
             .send({ email: 'test_auth_dup@example.com', password: 'password123', name: 'Test' });
@@ -32,7 +32,7 @@ describe('POST /auth/register', () => {
             .post('/auth/register')
             .send({ email: 'test_auth_dup@example.com', password: 'password123', name: 'Test' });
 
-        expect(res.status).toBe(500);
+        expect(res.status).toBe(409);
     });
 });
 
