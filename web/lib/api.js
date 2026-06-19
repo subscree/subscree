@@ -37,6 +37,10 @@ export const getMe = () => fetchApi('/users/me');
 export const updateMe = (data) => fetchApi('/users/me', { method: 'PATCH', body: data });
 export const updatePassword = (data) => fetchApi('/users/me/password', { method: 'PATCH', body: data });
 
+// Password reset
+export const forgotPassword = (email) => fetchApi('/auth/forgot-password', { method: 'POST', body: { email } });
+export const resetPassword = (token, password) => fetchApi('/auth/reset-password', { method: 'POST', body: { token, password } });
+
 // Currencies
 export const getCurrencies = () => fetchApi('/currencies');
 

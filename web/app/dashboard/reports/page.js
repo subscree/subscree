@@ -104,9 +104,10 @@ export default function ReportsPage() {
             <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
 
             {/* Summary */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
                 {[
                     { label: t('totalMonthly'), value: fmt(stats?.totalMonthlySpend ?? 0, currency) },
+                    { label: t('totalYearly'),  value: fmt(stats?.totalYearlySpend ?? 0, currency) },
                     { label: t('totalActive'),  value: stats?.totalSubscriptions ?? 0 },
                     { label: t('upcoming'),     value: stats?.upcomingRenewals?.length ?? 0 },
                     { label: t('total'),        value: subs.length },

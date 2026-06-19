@@ -58,6 +58,15 @@ export default function SettingsPage() {
     const [prefError, setPrefError] = useState(null);
     const [prefSuccess, setPrefSuccess] = useState(false);
 
+    // Notifications
+    const [notifyEnabled, setNotifyEnabled] = useState(false);
+    const [notifyMode, setNotifyMode] = useState('PER_SUBSCRIPTION');
+    const [notifyDaysBefore, setNotifyDaysBefore] = useState(3);
+    const [notifyDigestFrequency, setNotifyDigestFrequency] = useState('WEEKLY');
+    const [notifyLoading, setNotifyLoading] = useState(false);
+    const [notifyError, setNotifyError] = useState(null);
+    const [notifySuccess, setNotifySuccess] = useState(false);
+
     useEffect(() => {
         const currentLocale = document.cookie
             .split('; ')
@@ -70,6 +79,10 @@ export default function SettingsPage() {
                 setUser(userRes.user);
                 setProfileName(userRes.user.name);
                 setPrefCurrency(userRes.user.preferredCurrency);
+                setNotifyEnabled(userRes.user.notifyEnabled ?? false);
+                setNotifyMode(userRes.user.notifyMode ?? 'PER_SUBSCRIPTION');
+                setNotifyDaysBefore(userRes.user.notifyDaysBefore ?? 3);
+                setNotifyDigestFrequency(userRes.user.notifyDigestFrequency ?? 'WEEKLY');
                 setCurrencies(currRes.currencies || []);
             })
             .finally(() => setLoading(false));
@@ -123,6 +136,27 @@ export default function SettingsPage() {
             setPrefError(err.message);
         } finally {
             setPrefLoading(false);
+        }
+    };
+
+    const handleNotificationsSave = async (e) => {
+        e.preventDefault();
+        setNotifyError(null);
+        setNotifySuccess(false);
+        setNotifyLoading(true);
+        try {
+            const res = await updateMe({
+                notifyEnabled,
+                notifyMode,
+                notifyDaysBefore: Number(notifyDaysBefore),
+                notifyDigestFrequency,
+            });
+            setUser(res.user);
+            setNotifySuccess(true);
+        } catch (err) {
+            setNotifyError(err.message);
+        } finally {
+            setNotifyLoading(false);
         }
     };
 
@@ -307,6 +341,89 @@ export default function SettingsPage() {
                                 </FieldGroup>
                                 <Button type="submit" disabled={prefLoading} className="w-fit">
                                     {prefLoading ? t('savingPreferences') : t('savePreferences')}
+                                </Button>
+                            </form>
+                        </CardContent>
+                    </Card>
+
+                    {/* Notifications */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t('notifications')}</CardTitle>
+                            <CardDescription>{t('notificationsDescription')}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <form onSubmit={handleNotificationsSave} className="flex flex-col gap-4">
+                                {notifyError && (
+                                    <Alert variant="destructive">
+                                        <AlertDescription>{notifyError}</AlertDescription>
+                                    </Alert>
+                                )}
+                                {notifySuccess && <SuccessAlert message={t('notificationsSaved')} />}
+                                <FieldGroup>
+                                    <Field>
+                                        <FieldLabel>{t('notifyEnabled')}</FieldLabel>
+                                        <Select value={notifyEnabled ? 'on' : 'off'} onValueChange={v => setNotifyEnabled(v === 'on')}>
+                                            <SelectTrigger className="w-full">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectGroup>
+                                                    <SelectItem value="on">{t('notifyOn')}</SelectItem>
+                                                    <SelectItem value="off">{t('notifyOff')}</SelectItem>
+                                                </SelectGroup>
+                                            </SelectContent>
+                                        </Select>
+                                    </Field>
+                                    {notifyEnabled && (
+                                        <>
+                                            <Field>
+                                                <FieldLabel>{t('notifyMode')}</FieldLabel>
+                                                <Select value={notifyMode} onValueChange={setNotifyMode}>
+                                                    <SelectTrigger className="w-full">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectGroup>
+                                                            <SelectItem value="PER_SUBSCRIPTION">{t('notifyModePerSubscription')}</SelectItem>
+                                                            <SelectItem value="DIGEST">{t('notifyModeDigest')}</SelectItem>
+                                                        </SelectGroup>
+                                                    </SelectContent>
+                                                </Select>
+                                            </Field>
+                                            {notifyMode === 'PER_SUBSCRIPTION' ? (
+                                                <Field>
+                                                    <FieldLabel htmlFor="notifyDaysBefore">{t('notifyDaysBefore')}</FieldLabel>
+                                                    <Input
+                                                        id="notifyDaysBefore"
+                                                        type="number"
+                                                        min={1}
+                                                        max={60}
+                                                        value={notifyDaysBefore}
+                                                        onChange={e => setNotifyDaysBefore(e.target.value)}
+                                                    />
+                                                </Field>
+                                            ) : (
+                                                <Field>
+                                                    <FieldLabel>{t('notifyDigestFrequency')}</FieldLabel>
+                                                    <Select value={notifyDigestFrequency} onValueChange={setNotifyDigestFrequency}>
+                                                        <SelectTrigger className="w-full">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectGroup>
+                                                                <SelectItem value="WEEKLY">{t('notifyDigestWeekly')}</SelectItem>
+                                                                <SelectItem value="MONTHLY">{t('notifyDigestMonthly')}</SelectItem>
+                                                            </SelectGroup>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </Field>
+                                            )}
+                                        </>
+                                    )}
+                                </FieldGroup>
+                                <Button type="submit" disabled={notifyLoading} className="w-fit">
+                                    {notifyLoading ? t('savingNotifications') : t('saveNotifications')}
                                 </Button>
                             </form>
                         </CardContent>

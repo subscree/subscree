@@ -21,6 +21,16 @@ enum SubscriptionStatus {
     TRIAL
 }
 
+enum NotificationMode {
+    PER_SUBSCRIPTION
+    DIGEST
+}
+
+enum DigestFrequency {
+    WEEKLY
+    MONTHLY
+}
+
 model User {
     id                String          @id @default(uuid())
     email             String          @unique
@@ -30,6 +40,18 @@ model User {
     subscriptions     Subscription[]
     categories        Category[]
     paymentMethods    PaymentMethod[]
+
+    // Payment reminder notifications
+    notifyEnabled         Boolean          @default(false)
+    notifyMode            NotificationMode @default(PER_SUBSCRIPTION)
+    notifyDaysBefore      Int              @default(3)
+    notifyDigestFrequency DigestFrequency  @default(WEEKLY)
+    lastDigestSentAt      DateTime?
+
+    // Password reset
+    resetTokenHash      String?
+    resetTokenExpiresAt DateTime?
+
     createdAt         DateTime        @default(now())
     updatedAt         DateTime        @updatedAt
 }
@@ -64,6 +86,8 @@ model Subscription {
     nextBillingDate DateTime?
     cancelledAt     DateTime?
     notes           String?
+    // nextBillingDate value a per-subscription reminder was last sent for (dedupe)
+    reminderSentForDate DateTime?
     createdAt       DateTime          @default(now())
     updatedAt       DateTime          @updatedAt
 }

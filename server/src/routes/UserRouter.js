@@ -11,6 +11,10 @@ UserRouter.use(AuthMiddleware);
 const profileSchema = z.object({
     name:              z.string().min(1, 'Name is required').max(100).optional(),
     preferredCurrency: z.enum(CURRENCY_CODES, { error: 'Invalid currency code' }).optional(),
+    notifyEnabled:         z.boolean().optional(),
+    notifyMode:            z.enum(['PER_SUBSCRIPTION', 'DIGEST']).optional(),
+    notifyDaysBefore:      z.number().int().min(1).max(60).optional(),
+    notifyDigestFrequency: z.enum(['WEEKLY', 'MONTHLY']).optional(),
 });
 
 const passwordSchema = z.object({
@@ -19,7 +23,16 @@ const passwordSchema = z.object({
 });
 
 function safeUser(user) {
-    return { id: user.id, email: user.email, name: user.name, preferredCurrency: user.preferredCurrency };
+    return {
+        id:                    user.id,
+        email:                 user.email,
+        name:                  user.name,
+        preferredCurrency:     user.preferredCurrency,
+        notifyEnabled:         user.notifyEnabled,
+        notifyMode:            user.notifyMode,
+        notifyDaysBefore:      user.notifyDaysBefore,
+        notifyDigestFrequency: user.notifyDigestFrequency,
+    };
 }
 
 UserRouter.get('/me', async (req, res, next) => {

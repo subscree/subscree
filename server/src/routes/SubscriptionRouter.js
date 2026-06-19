@@ -123,9 +123,12 @@ SubscribtionRouter.get('/stats', async (req, res, next) => {
             })
         );
 
+        const totalMonthlySpend = Math.round(monthlyAmounts.reduce((s, v) => s + v, 0) * 100) / 100;
+
         res.json({
             totalSubscriptions:  activeSubscriptions.length,
-            totalMonthlySpend:   Math.round(monthlyAmounts.reduce((s, v) => s + v, 0) * 100) / 100,
+            totalMonthlySpend,
+            totalYearlySpend:    Math.round(totalMonthlySpend * 12 * 100) / 100,
             currency:            targetCurrency,
             subscriptionsByStatus: subscriptionsByStatus.reduce((acc, item) => {
                 acc[item.status] = item._count.status;

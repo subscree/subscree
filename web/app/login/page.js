@@ -76,7 +76,10 @@ export default function LoginPage() {
                     <Button type="submit" disabled={loading} className="mt-4 w-full">
                         {loading ? t('loggingIn') : t('login')}
                     </Button>
-                    <Link href="/register" className="block text-center mt-4 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    <Link href="/forgot-password" className="block text-center mt-4 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                        {t('forgotPassword')}
+                    </Link>
+                    <Link href="/register" className="block text-center mt-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
                         {t('noAccount')}
                     </Link>
                 </form>
