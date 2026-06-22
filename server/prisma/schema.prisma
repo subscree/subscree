@@ -61,6 +61,11 @@ model User {
     notifyDigestFrequency DigestFrequency  @default(WEEKLY)
     lastDigestSentAt      DateTime?
 
+    // Push notifications (Expo)
+    pushEnabled   Boolean        @default(false)
+    pushTokens    PushToken[]
+    notifications Notification[]
+
     // Password reset
     resetTokenHash      String?
     resetTokenExpiresAt DateTime?
@@ -179,4 +184,32 @@ model Category {
     updatedAt     DateTime       @updatedAt
 
     @@index([teamId])
+}
+
+// One Expo push token per device. A user may have several.
+model PushToken {
+    id        String   @id @default(uuid())
+    userId    String
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    token     String   @unique
+    platform  String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([userId])
+}
+
+// In-app notification center entries. Written whenever a reminder is dispatched.
+model Notification {
+    id        String    @id @default(uuid())
+    userId    String
+    user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+    title     String
+    body      String
+    type      String    @default("reminder")
+    data      Json?
+    readAt    DateTime?
+    createdAt DateTime  @default(now())
+
+    @@index([userId, createdAt])
 }

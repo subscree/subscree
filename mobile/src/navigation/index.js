@@ -9,6 +9,8 @@ import { Box } from '@/components/ui/box';
 import { Spinner } from '@/components/ui/spinner';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { navigationRef } from '../lib/navigationRef';
+import { PushManager } from '../components/PushManager';
 
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
@@ -22,6 +24,7 @@ import CategoriesScreen from '../screens/CategoriesScreen';
 import PaymentMethodsScreen from '../screens/PaymentMethodsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import TeamScreen from '../screens/TeamScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
 
 const Auth = createNativeStackNavigator();
 const HomeStack = createNativeStackNavigator();
@@ -45,6 +48,7 @@ function HomeNavigator() {
       <HomeStack.Screen name="SubscriptionDetail" component={SubscriptionDetailScreen} />
       <HomeStack.Screen name="NewSubscription" component={NewSubscriptionScreen} />
       <HomeStack.Screen name="EditSubscription" component={EditSubscriptionScreen} />
+      <HomeStack.Screen name="Notifications" component={NotificationsScreen} />
     </HomeStack.Navigator>
   );
 }
@@ -118,8 +122,15 @@ export default function RootNavigator() {
   }
 
   return (
-    <NavigationContainer theme={scheme === 'dark' ? DarkTheme : DefaultTheme}>
-      {isAuthenticated ? <TabNavigator /> : <AuthNavigator />}
+    <NavigationContainer ref={navigationRef} theme={scheme === 'dark' ? DarkTheme : DefaultTheme}>
+      {isAuthenticated ? (
+        <>
+          <TabNavigator />
+          <PushManager />
+        </>
+      ) : (
+        <AuthNavigator />
+      )}
     </NavigationContainer>
   );
 }

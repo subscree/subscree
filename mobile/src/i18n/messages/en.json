@@ -189,7 +189,12 @@
     "notifyDigestWeekly": "Weekly",
     "notifyDigestMonthly": "Monthly",
     "saveNotifications": "Save reminders",
-    "savingNotifications": "Saving…"
+    "savingNotifications": "Saving…",
+    "pushTitle": "Push notifications",
+    "pushDescription": "Get push notifications on this device for upcoming payments.",
+    "pushEnabledLabel": "Push on this device",
+    "pushDenied": "Notifications are blocked. Enable them in your system settings.",
+    "pushNeedsDevice": "Push notifications require a physical device."
   },
   "Language": {
     "en": "English",
@@ -316,5 +321,9 @@
       "crypto": "Crypto",
       "other": "Other"
     }
+  },
+  "Notifications": {
+    "title": "Notifications",
+    "empty": "No notifications yet"
   }
 }

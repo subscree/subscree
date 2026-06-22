@@ -189,7 +189,12 @@
     "notifyDigestWeekly": "Щотижня",
     "notifyDigestMonthly": "Щомісяця",
     "saveNotifications": "Зберегти нагадування",
-    "savingNotifications": "Збереження…"
+    "savingNotifications": "Збереження…",
+    "pushTitle": "Push-сповіщення",
+    "pushDescription": "Отримуйте push-сповіщення про майбутні платежі на цьому пристрої.",
+    "pushEnabledLabel": "Push на цьому пристрої",
+    "pushDenied": "Сповіщення заблоковано. Увімкніть їх у системних налаштуваннях.",
+    "pushNeedsDevice": "Push-сповіщення працюють лише на фізичному пристрої."
   },
   "Language": {
     "en": "English",
@@ -316,5 +321,9 @@
       "crypto": "Крипто",
       "other": "Інше"
     }
+  },
+  "Notifications": {
+    "title": "Сповіщення",
+    "empty": "Сповіщень ще немає"
   }
 }

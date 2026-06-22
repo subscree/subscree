@@ -1,8 +1,21 @@
 import prisma from '../db/index.js';
 import { convert } from './currencyService.js';
 import { sendEmail, isEmailConfigured } from './emailService.js';
+import { sendPushToUser } from './pushService.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+// Persist a notification-center entry. Never throws — the centre is a
+// best-effort mirror of what we dispatched.
+async function recordNotification(userId, { title, body, type, data }) {
+    try {
+        await prisma.notification.create({
+            data: { userId, title, body, type: type || 'reminder', data: data ?? undefined },
+        });
+    } catch (err) {
+        console.error('[notifications] failed to record notification:', err.message);
+    }
+}
 
 function fmtMoney(amount, currency) {
     try {
@@ -73,8 +86,10 @@ async function sendPerSubscriptionReminders(user) {
         });
         if (already) continue;
 
-        const html = emailShell(
-            `Upcoming payment: ${sub.name}`,
+        const title = `Upcoming payment: ${sub.name}`;
+        const body  = `${sub.name} renews on ${fmtDate(sub.nextBillingDate)} for ${fmtMoney(sub.amount, sub.currency)}.`;
+        const html  = emailShell(
+            title,
             `<p style="font-size:14px;line-height:1.6">
                 <strong>${sub.name}</strong> renews on <strong>${fmtDate(sub.nextBillingDate)}</strong>
                 for <strong>${fmtMoney(sub.amount, sub.currency)}</strong>.
@@ -82,12 +97,18 @@ async function sendPerSubscriptionReminders(user) {
         );
 
         try {
-            await sendEmail({
-                to:      user.email,
-                subject: `Upcoming payment: ${sub.name} — ${fmtMoney(sub.amount, sub.currency)}`,
-                html,
-                text:    `${sub.name} renews on ${fmtDate(sub.nextBillingDate)} for ${fmtMoney(sub.amount, sub.currency)}.`,
-            });
+            if (user.notifyEnabled && isEmailConfigured()) {
+                await sendEmail({
+                    to:      user.email,
+                    subject: `Upcoming payment: ${sub.name} — ${fmtMoney(sub.amount, sub.currency)}`,
+                    html,
+                    text:    body,
+                });
+            }
+            if (user.pushEnabled) {
+                await sendPushToUser(user.id, { title, body, data: { type: 'reminder', subscriptionId: sub.id } });
+            }
+            await recordNotification(user.id, { title, body, type: 'reminder', data: { subscriptionId: sub.id } });
             await prisma.reminderLog.create({
                 data: { userId: user.id, subscriptionId: sub.id, billingDate: sub.nextBillingDate },
             });
@@ -138,19 +159,27 @@ async function sendDigest(user) {
         </tr>`).join('');
 
     const periodLabel = user.notifyDigestFrequency === 'MONTHLY' ? 'next 30 days' : 'next 7 days';
+    const title = `Upcoming payments — ${periodLabel}`;
+    const pushBody = `${upcoming.length} upcoming ${upcoming.length === 1 ? 'payment' : 'payments'} • ${fmtMoney(total, user.preferredCurrency)}`;
     const html = emailShell(
-        `Upcoming payments — ${periodLabel}`,
+        title,
         `<table style="width:100%;border-collapse:collapse;font-size:14px">${rows}</table>
          <p style="font-size:14px;margin-top:16px">Estimated total: <strong>${fmtMoney(total, user.preferredCurrency)}</strong></p>`
     );
 
     try {
-        await sendEmail({
-            to:      user.email,
-            subject: `Your upcoming subscription payments (${periodLabel})`,
-            html,
-            text:    upcoming.map(s => `${s.name} — ${fmtDate(s.nextBillingDate)} — ${fmtMoney(s.amount, s.currency)}`).join('\n'),
-        });
+        if (user.notifyEnabled && isEmailConfigured()) {
+            await sendEmail({
+                to:      user.email,
+                subject: `Your upcoming subscription payments (${periodLabel})`,
+                html,
+                text:    upcoming.map(s => `${s.name} — ${fmtDate(s.nextBillingDate)} — ${fmtMoney(s.amount, s.currency)}`).join('\n'),
+            });
+        }
+        if (user.pushEnabled) {
+            await sendPushToUser(user.id, { title, body: pushBody, data: { type: 'digest' } });
+        }
+        await recordNotification(user.id, { title, body: pushBody, type: 'digest', data: null });
         await prisma.user.update({ where: { id: user.id }, data: { lastDigestSentAt: now } });
     } catch (err) {
         console.error(`[notifications] digest failed for user ${user.id}:`, err.message);
@@ -160,9 +189,11 @@ async function sendDigest(user) {
 // Process all users with notifications enabled. Safe to call repeatedly;
 // per-occurrence dedupe prevents duplicate emails.
 export async function runDueNotifications() {
-    if (!isEmailConfigured()) return;
-
-    const users = await prisma.user.findMany({ where: { notifyEnabled: true } });
+    // Process anyone with email reminders OR push enabled; channel availability
+    // is decided per-send below.
+    const users = await prisma.user.findMany({
+        where: { OR: [{ notifyEnabled: true }, { pushEnabled: true }] },
+    });
     for (const user of users) {
         try {
             if (user.notifyMode === 'DIGEST') {

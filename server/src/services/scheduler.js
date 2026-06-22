@@ -1,5 +1,6 @@
 import { runDueNotifications } from './notificationService.js';
 import { isEmailConfigured } from './emailService.js';
+import { isPushConfigured } from './pushService.js';
 
 // Poll interval for the notification dispatcher. Per-occurrence dedupe makes
 // frequent runs harmless; default is hourly.
@@ -9,8 +10,10 @@ let timer = null;
 
 export function startScheduler() {
     if (timer) return;
-    if (!isEmailConfigured()) {
-        console.log('[scheduler] no email provider configured — notification scheduler disabled');
+    // Push works without an email provider, so the scheduler runs whenever
+    // either channel is available.
+    if (!isEmailConfigured() && !isPushConfigured()) {
+        console.log('[scheduler] no notification channel available — scheduler disabled');
         return;
     }
 

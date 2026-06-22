@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Screen from '../components/Screen';
 import StatusBadge from '../components/StatusBadge';
 import SubscriptionIcon from '../components/SubscriptionIcon';
-import { getSubscriptions, getStats } from '../api';
+import { getSubscriptions, getStats, getNotifications } from '../api';
 import { formatAmount, formatDate, daysUntil } from '../lib/format';
 import { VStack } from '@/components/ui/vstack';
 import { HStack } from '@/components/ui/hstack';
@@ -90,6 +90,7 @@ export default function DashboardScreen({ navigation }) {
 
   const [subscriptions, setSubscriptions] = useState([]);
   const [stats, setStats] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [activeTab, setActiveTab] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -109,12 +110,14 @@ export default function DashboardScreen({ navigation }) {
       else setLoading(true);
       setError('');
       try {
-        const [subRes, statsRes] = await Promise.all([
+        const [subRes, statsRes, notifRes] = await Promise.all([
           getSubscriptions(activeTab ? { status: activeTab } : {}),
           getStats(),
+          getNotifications().catch(() => ({ unreadCount: 0 })),
         ]);
         setSubscriptions(subRes.subscriptions || []);
         setStats(statsRes);
+        setUnreadCount(notifRes.unreadCount || 0);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -139,6 +142,16 @@ export default function DashboardScreen({ navigation }) {
     <Screen edges={['top']}>
       <HStack className="items-center justify-between px-5 pt-4 pb-3">
         <Heading size="2xl">{t('title')}</Heading>
+        <Pressable onPress={() => navigation.navigate('Notifications')} className="p-1">
+          <Ionicons name="notifications-outline" size={24} color="#737373" />
+          {unreadCount > 0 && (
+            <Box className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-error-600 items-center justify-center">
+              <Text className="text-[10px] font-bold text-typography-0">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </Text>
+            </Box>
+          )}
+        </Pressable>
       </HStack>
 
       <HStack space="md" className="px-5 mb-4">

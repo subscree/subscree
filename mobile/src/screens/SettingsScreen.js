@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView } from 'react-native';
+import { Platform, ScrollView } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslations } from 'use-intl';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -10,7 +11,9 @@ import AppSelect from '../components/AppSelect';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLocaleControl } from '../context/LocaleContext';
-import { getMe, updateMe, updatePassword, getCurrencies } from '../api';
+import { PUSH_OPT_IN_KEY } from '../components/PushManager';
+import { requestPushToken, getPushTokenIfGranted } from '../lib/push';
+import { getMe, updateMe, updatePassword, getCurrencies, registerPushToken, unregisterPushToken } from '../api';
 import { SUPPORTED_LOCALES } from '../i18n';
 import { VStack } from '@/components/ui/vstack';
 import { HStack } from '@/components/ui/hstack';
@@ -73,6 +76,11 @@ export default function SettingsScreen({ navigation }) {
   const [prefSaving, setPrefSaving] = useState(false);
   const [prefMsg, setPrefMsg] = useState(null);
 
+  // Push notifications (this device)
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushErr, setPushErr] = useState(null);
+
   // Notifications
   const [notifyEnabled, setNotifyEnabled] = useState(false);
   const [notifyMode, setNotifyMode] = useState('PER_SUBSCRIPTION');
@@ -87,6 +95,7 @@ export default function SettingsScreen({ navigation }) {
         const u = userRes.user || {};
         setName(u.name ?? '');
         setCurrency(u.preferredCurrency ?? 'USD');
+        setPushEnabled(u.pushEnabled ?? false);
         setNotifyEnabled(u.notifyEnabled ?? false);
         setNotifyMode(u.notifyMode ?? 'PER_SUBSCRIPTION');
         setNotifyDaysBefore(String(u.notifyDaysBefore ?? 3));
@@ -154,6 +163,31 @@ export default function SettingsScreen({ navigation }) {
       /* ignore */
     } finally {
       setNotifySaving(false);
+    }
+  };
+
+  const togglePush = async (next) => {
+    setPushErr(null);
+    setPushBusy(true);
+    try {
+      if (next) {
+        const token = await requestPushToken();
+        await registerPushToken(token, Platform.OS);
+        await AsyncStorage.setItem(PUSH_OPT_IN_KEY, '1');
+        setPushEnabled(true);
+      } else {
+        const token = await getPushTokenIfGranted();
+        if (token) await unregisterPushToken(token);
+        await AsyncStorage.removeItem(PUSH_OPT_IN_KEY);
+        setPushEnabled(false);
+      }
+    } catch (e) {
+      if (e.code === 'NOT_A_DEVICE') setPushErr(t('pushNeedsDevice'));
+      else if (e.code === 'PERMISSION_DENIED') setPushErr(t('pushDenied'));
+      else setPushErr(e.message);
+      setPushEnabled(false);
+    } finally {
+      setPushBusy(false);
     }
   };
 
@@ -274,6 +308,19 @@ export default function SettingsScreen({ navigation }) {
               {pwSaving && <ButtonSpinner className="mr-2" />}
               <ButtonText>{pwSaving ? t('savingPassword') : t('savePassword')}</ButtonText>
             </Button>
+          </SectionCard>
+
+          {/* Push notifications (this device) */}
+          <SectionCard title={t('pushTitle')} description={t('pushDescription')}>
+            {!!pushErr && (
+              <Alert action="error" variant="outline">
+                <AlertText>{pushErr}</AlertText>
+              </Alert>
+            )}
+            <HStack className="items-center justify-between">
+              <Text className="text-typography-900 flex-1 mr-3">{t('pushEnabledLabel')}</Text>
+              <Switch value={pushEnabled} onValueChange={togglePush} isDisabled={pushBusy} />
+            </HStack>
           </SectionCard>
 
           {/* Notifications */}

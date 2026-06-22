@@ -43,6 +43,15 @@ export const updateMe = (data) => fetchApi('/users/me', { method: 'PATCH', body:
 export const updatePassword = (data) =>
   fetchApi('/users/me/password', { method: 'PATCH', body: data });
 
+// Push notifications
+export const registerPushToken = (token, platform) =>
+  fetchApi('/users/me/push-tokens', { method: 'POST', body: { token, platform } });
+export const unregisterPushToken = (token) =>
+  fetchApi('/users/me/push-tokens', { method: 'DELETE', body: { token } });
+export const getNotifications = () => fetchApi('/users/me/notifications');
+export const markNotificationsRead = (ids) =>
+  fetchApi('/users/me/notifications/read', { method: 'POST', body: ids ? { ids } : {} });
+
 // Teams
 export const getTeams = () => fetchApi('/teams');
 export const createTeam = (name) => fetchApi('/teams', { method: 'POST', body: { name } });
