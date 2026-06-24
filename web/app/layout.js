@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { ErrorTranslatorBridge } from "@/components/ErrorTranslatorBridge";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -32,6 +33,7 @@ export default async function RootLayout({ children }) {
             <body className="h-full bg-background text-foreground" suppressHydrationWarning>
                 <ThemeProvider>
                     <NextIntlClientProvider locale={locale} messages={messages}>
+                        <ErrorTranslatorBridge />
                         {children}
                     </NextIntlClientProvider>
                 </ThemeProvider>

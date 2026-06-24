@@ -10,7 +10,7 @@ const TeamMiddleware = async (req, res, next) => {
             where:  { id: req.userId },
             select: { activeTeamId: true },
         });
-        if (!user) return res.status(401).json({ message: 'User not found' });
+        if (!user) return res.status(401).json({ error: 'USER_NOT_FOUND', message: 'User not found' });
 
         let membership = null;
 
@@ -36,7 +36,7 @@ const TeamMiddleware = async (req, res, next) => {
         }
 
         if (!membership) {
-            return res.status(403).json({ message: 'No active team. Create or join a team first.' });
+            return res.status(403).json({ error: 'TEAM_NONE_ACTIVE', message: 'No active team. Create or join a team first.' });
         }
 
         req.teamId   = membership.teamId;

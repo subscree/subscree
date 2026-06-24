@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
+import { resolveErrorMessage } from './lib/errors';
 
 const BASE_URL =
   process.env.EXPO_PUBLIC_API_URL ??
@@ -16,7 +17,7 @@ async function fetchApi(path, { method = 'GET', body } = {}) {
     ...(body != null ? { body: JSON.stringify(body) } : {}),
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
+  if (!res.ok) throw new Error(resolveErrorMessage(data, res.status));
   return data;
 }
 

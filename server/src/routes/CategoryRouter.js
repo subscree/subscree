@@ -1,4 +1,5 @@
 import express from 'express';
+import { validationError } from '../lib/apiError.js';
 import AuthMiddleware from '../middleware/AuthMiddleware.js';
 import TeamMiddleware from '../middleware/TeamMiddleware.js';
 import prisma from '../db/index.js';
@@ -27,7 +28,7 @@ CategoryRouter.post('/', async (req, res, next) => {
     const result = CategoryValidator.add.safeParse(req.body);
 
     if (!result.success) {
-        return res.status(400).json({ message: result.error.issues[0].message });
+        return validationError(res, result);
     }
 
     const { name } = result.data;
@@ -38,7 +39,7 @@ CategoryRouter.post('/', async (req, res, next) => {
         });
 
         if (existingCategory) {
-            return res.status(409).json({ message: 'Category with this name already exists' });
+            return res.status(409).json({ error: 'CATEGORY_NAME_EXISTS', message: 'Category with this name already exists' });
         }
 
         const category = await prisma.category.create({
@@ -60,7 +61,7 @@ CategoryRouter.patch('/:id', async (req, res, next) => {
     const result = CategoryValidator.update.safeParse(req.body);
 
     if (!result.success) {
-        return res.status(400).json({ message: result.error.issues[0].message });
+        return validationError(res, result);
     }
 
     const { name } = result.data;
@@ -71,7 +72,7 @@ CategoryRouter.patch('/:id', async (req, res, next) => {
         });
 
         if (existingCategory) {
-            return res.status(409).json({ message: 'Category with this name already exists' });
+            return res.status(409).json({ error: 'CATEGORY_NAME_EXISTS', message: 'Category with this name already exists' });
         }
 
         const category = await prisma.category.updateMany({
@@ -80,7 +81,7 @@ CategoryRouter.patch('/:id', async (req, res, next) => {
         });
 
         if (category.count === 0) {
-            return res.status(404).json({ message: 'Category not found' });
+            return res.status(404).json({ error: 'CATEGORY_NOT_FOUND', message: 'Category not found' });
         }
 
         res.json({ message: 'Category updated successfully' });
@@ -98,7 +99,7 @@ CategoryRouter.delete('/:id', async (req, res, next) => {
         });
 
         if (category.count === 0) {
-            return res.status(404).json({ message: 'Category not found' });
+            return res.status(404).json({ error: 'CATEGORY_NOT_FOUND', message: 'Category not found' });
         }
 
         res.json({ message: 'Category deleted successfully' });

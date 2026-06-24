@@ -4,6 +4,7 @@ import { getLocales } from 'expo-localization';
 import { IntlProvider } from 'use-intl';
 
 import { messages, normalizeLocale, DEFAULT_LOCALE } from '../i18n';
+import { ErrorTranslatorBridge } from '../components/ErrorTranslatorBridge';
 
 const STORAGE_KEY = 'locale';
 
@@ -36,6 +37,7 @@ export function LocaleProvider({ children }) {
   return (
     <LocaleContext.Provider value={{ locale, setLocale }}>
       <IntlProvider locale={locale} messages={messages[locale]}>
+        <ErrorTranslatorBridge />
         {children}
       </IntlProvider>
     </LocaleContext.Provider>

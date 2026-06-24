@@ -1,4 +1,5 @@
 import express from 'express';
+import { validationError } from '../lib/apiError.js';
 import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
@@ -46,7 +47,7 @@ function safeUser(user) {
 AuthRouter.post('/register', async (req, res, next) => {
     const result = registerSchema.safeParse(req.body);
     if (!result.success) {
-        return res.status(400).json({ message: result.error.issues[0].message });
+        return validationError(res, result);
     }
 
     const { email, name, password, inviteToken } = result.data;
@@ -83,7 +84,7 @@ AuthRouter.post('/register', async (req, res, next) => {
         res.status(201).json({ message: 'User registered successfully', user: safeUser(user) });
     } catch (error) {
         if (error.code === 'P2002') {
-            return res.status(409).json({ message: 'Email already in use' });
+            return res.status(409).json({ error: 'AUTH_EMAIL_IN_USE', message: 'Email already in use' });
         }
         return next(error);
     }
@@ -92,7 +93,7 @@ AuthRouter.post('/register', async (req, res, next) => {
 AuthRouter.post('/login', async (req, res, next) => {
     const result = loginSchema.safeParse(req.body);
     if (!result.success) {
-        return res.status(400).json({ message: result.error.issues[0].message });
+        return validationError(res, result);
     }
 
     const { email, password } = result.data;
@@ -101,7 +102,7 @@ AuthRouter.post('/login', async (req, res, next) => {
         const user = await prisma.user.findUnique({ where: { email } });
 
         if (!user || !bcrypt.compareSync(password, user.passwordHash)) {
-            return res.status(401).json({ message: 'Invalid email or password' });
+            return res.status(401).json({ error: 'AUTH_INVALID_CREDENTIALS', message: 'Invalid email or password' });
         }
 
         const token = await new SignJWT({ userId: user.id })
@@ -123,7 +124,7 @@ AuthRouter.get('/invitation/:token', async (req, res, next) => {
             include: { team: { select: { name: true } } },
         });
         if (!invitation || invitation.expiresAt < new Date()) {
-            return res.status(404).json({ message: 'Invalid or expired invitation' });
+            return res.status(404).json({ error: 'INVITATION_INVALID', message: 'Invalid or expired invitation' });
         }
         res.json({ email: invitation.email, teamName: invitation.team.name });
     } catch (err) { next(err); }
@@ -132,7 +133,7 @@ AuthRouter.get('/invitation/:token', async (req, res, next) => {
 AuthRouter.post('/forgot-password', async (req, res, next) => {
     const result = forgotPasswordSchema.safeParse(req.body);
     if (!result.success) {
-        return res.status(400).json({ message: result.error.issues[0].message });
+        return validationError(res, result);
     }
 
     const { email } = result.data;
@@ -179,7 +180,7 @@ AuthRouter.post('/forgot-password', async (req, res, next) => {
 AuthRouter.post('/reset-password', async (req, res, next) => {
     const result = resetPasswordSchema.safeParse(req.body);
     if (!result.success) {
-        return res.status(400).json({ message: result.error.issues[0].message });
+        return validationError(res, result);
     }
 
     const { token, password } = result.data;
@@ -193,7 +194,7 @@ AuthRouter.post('/reset-password', async (req, res, next) => {
         });
 
         if (!user) {
-            return res.status(400).json({ message: 'Invalid or expired reset token' });
+            return res.status(400).json({ error: 'AUTH_RESET_TOKEN_INVALID', message: 'Invalid or expired reset token' });
         }
 
         await prisma.user.update({

@@ -1,4 +1,5 @@
 import express from 'express';
+import { validationError } from '../lib/apiError.js';
 import AuthMiddleware from '../middleware/AuthMiddleware.js';
 import TeamMiddleware from '../middleware/TeamMiddleware.js';
 import prisma from '../db/index.js';
@@ -55,7 +56,7 @@ SubscribtionRouter.get('/', async (req, res, next) => {
 
 SubscribtionRouter.post('/', async (req, res, next) => {
     const result = SubscribtionValidator.add.safeParse(req.body);
-    if (!result.success) return res.status(400).json({ message: result.error.issues[0].message });
+    if (!result.success) return validationError(res, result);
 
     const {
         name, url, logoUrl, categories, paymentMethodId,
@@ -150,7 +151,7 @@ SubscribtionRouter.get('/:id', async (req, res, next) => {
             where:   { id, teamId },
             include: SUBSCRIPTION_INCLUDE,
         });
-        if (!subscription) return res.status(404).json({ message: 'Subscription not found' });
+        if (!subscription) return res.status(404).json({ error: 'SUBSCRIPTION_NOT_FOUND', message: 'Subscription not found' });
         res.json({ subscription });
     } catch (err) { next(err); }
 });
@@ -159,7 +160,7 @@ SubscribtionRouter.patch('/:id', async (req, res, next) => {
     const { id } = req.params;
     const { teamId } = req;
     const result = SubscribtionValidator.update.safeParse(req.body);
-    if (!result.success) return res.status(400).json({ message: result.error.issues[0].message });
+    if (!result.success) return validationError(res, result);
 
     const {
         name, url, logoUrl, categories, paymentMethodId,
@@ -169,7 +170,7 @@ SubscribtionRouter.patch('/:id', async (req, res, next) => {
 
     try {
         const existing = await prisma.subscription.findFirst({ where: { id, teamId } });
-        if (!existing) return res.status(404).json({ message: 'Subscription not found' });
+        if (!existing) return res.status(404).json({ error: 'SUBSCRIPTION_NOT_FOUND', message: 'Subscription not found' });
 
         const subscription = await prisma.subscription.update({
             where: { id },
@@ -201,7 +202,7 @@ SubscribtionRouter.delete('/:id', async (req, res, next) => {
     const { teamId } = req;
     try {
         const existing = await prisma.subscription.findFirst({ where: { id, teamId } });
-        if (!existing) return res.status(404).json({ message: 'Subscription not found' });
+        if (!existing) return res.status(404).json({ error: 'SUBSCRIPTION_NOT_FOUND', message: 'Subscription not found' });
         await prisma.subscription.delete({ where: { id } });
         res.json({ message: 'Subscription deleted' });
     } catch (err) { next(err); }

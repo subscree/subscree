@@ -1,4 +1,5 @@
 import express from 'express';
+import { validationError } from '../lib/apiError.js';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import AuthMiddleware from '../middleware/AuthMiddleware.js';
@@ -45,7 +46,7 @@ function safeUser(user) {
 UserRouter.get('/me', async (req, res, next) => {
     try {
         const user = await prisma.user.findUnique({ where: { id: req.userId } });
-        if (!user) return res.status(404).json({ message: 'User not found' });
+        if (!user) return res.status(404).json({ error: 'USER_NOT_FOUND', message: 'User not found' });
         res.json({ user: safeUser(user) });
     } catch (err) {
         next(err);
@@ -55,7 +56,7 @@ UserRouter.get('/me', async (req, res, next) => {
 UserRouter.patch('/me', async (req, res, next) => {
     const result = profileSchema.safeParse(req.body);
     if (!result.success) {
-        return res.status(400).json({ message: result.error.issues[0].message });
+        return validationError(res, result);
     }
 
     try {
@@ -72,17 +73,17 @@ UserRouter.patch('/me', async (req, res, next) => {
 UserRouter.patch('/me/password', async (req, res, next) => {
     const result = passwordSchema.safeParse(req.body);
     if (!result.success) {
-        return res.status(400).json({ message: result.error.issues[0].message });
+        return validationError(res, result);
     }
 
     const { currentPassword, newPassword } = result.data;
 
     try {
         const user = await prisma.user.findUnique({ where: { id: req.userId } });
-        if (!user) return res.status(404).json({ message: 'User not found' });
+        if (!user) return res.status(404).json({ error: 'USER_NOT_FOUND', message: 'User not found' });
 
         const valid = bcrypt.compareSync(currentPassword, user.passwordHash);
-        if (!valid) return res.status(400).json({ message: 'Current password is incorrect' });
+        if (!valid) return res.status(400).json({ error: 'USER_CURRENT_PASSWORD_INCORRECT', message: 'Current password is incorrect' });
 
         const passwordHash = bcrypt.hashSync(newPassword, 10);
         await prisma.user.update({ where: { id: req.userId }, data: { passwordHash } });
@@ -99,7 +100,7 @@ UserRouter.patch('/me/password', async (req, res, next) => {
 UserRouter.post('/me/push-tokens', async (req, res, next) => {
     const result = pushTokenSchema.safeParse(req.body);
     if (!result.success) {
-        return res.status(400).json({ message: result.error.issues[0].message });
+        return validationError(res, result);
     }
     const { token, platform } = result.data;
     try {
@@ -119,7 +120,7 @@ UserRouter.post('/me/push-tokens', async (req, res, next) => {
 UserRouter.delete('/me/push-tokens', async (req, res, next) => {
     const result = pushTokenSchema.safeParse(req.body);
     if (!result.success) {
-        return res.status(400).json({ message: result.error.issues[0].message });
+        return validationError(res, result);
     }
     try {
         await prisma.pushToken.deleteMany({ where: { token: result.data.token, userId: req.userId } });

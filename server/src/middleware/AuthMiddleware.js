@@ -4,12 +4,12 @@ const AuthMiddleware = async (req, res, next) => {
     const authHeader = req.headers['authorization'];
 
     if (!authHeader) {
-        return res.status(401).json({ message: 'Authorization header missing' });
+        return res.status(401).json({ error: 'AUTH_HEADER_MISSING', message: 'Authorization header missing' });
     }
 
     const token = authHeader.split(' ')[1];
     if (!token) {
-        return res.status(401).json({ message: 'Token missing' });
+        return res.status(401).json({ error: 'AUTH_TOKEN_MISSING', message: 'Token missing' });
     }
 
     try {
@@ -17,7 +17,7 @@ const AuthMiddleware = async (req, res, next) => {
         req.userId = payload.userId;
         next();
     } catch (err) {
-        return res.status(401).json({ message: 'Invalid token' });
+        return res.status(401).json({ error: 'AUTH_TOKEN_INVALID', message: 'Invalid token' });
     }
 };
 

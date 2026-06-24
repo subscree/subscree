@@ -1,4 +1,5 @@
 import express from 'express';
+import { validationError } from '../lib/apiError.js';
 import crypto from 'node:crypto';
 import { z } from 'zod';
 import AuthMiddleware from '../middleware/AuthMiddleware.js';
@@ -61,7 +62,7 @@ TeamRouter.get('/', async (req, res, next) => {
 // Create a new team; caller becomes OWNER and it becomes their active team.
 TeamRouter.post('/', async (req, res, next) => {
     const result = createTeamSchema.safeParse(req.body);
-    if (!result.success) return res.status(400).json({ message: result.error.issues[0].message });
+    if (!result.success) return validationError(res, result);
 
     try {
         const team = await prisma.team.create({
@@ -80,7 +81,7 @@ TeamRouter.post('/:id/activate', async (req, res, next) => {
     const { id } = req.params;
     try {
         const membership = await getMembership(id, req.userId);
-        if (!membership) return res.status(403).json({ message: 'Not a member of this team' });
+        if (!membership) return res.status(403).json({ error: 'TEAM_NOT_MEMBER', message: 'Not a member of this team' });
 
         await prisma.user.update({ where: { id: req.userId }, data: { activeTeamId: id } });
         res.json({ message: 'Active team switched', activeTeamId: id });
@@ -91,12 +92,12 @@ TeamRouter.post('/:id/activate', async (req, res, next) => {
 TeamRouter.patch('/:id', async (req, res, next) => {
     const { id } = req.params;
     const result = renameTeamSchema.safeParse(req.body);
-    if (!result.success) return res.status(400).json({ message: result.error.issues[0].message });
+    if (!result.success) return validationError(res, result);
 
     try {
         const membership = await getMembership(id, req.userId);
-        if (!membership) return res.status(404).json({ message: 'Team not found' });
-        if (membership.role !== 'OWNER') return res.status(403).json({ message: 'Only the owner can rename the team' });
+        if (!membership) return res.status(404).json({ error: 'TEAM_NOT_FOUND', message: 'Team not found' });
+        if (membership.role !== 'OWNER') return res.status(403).json({ error: 'TEAM_OWNER_ONLY_RENAME', message: 'Only the owner can rename the team' });
 
         const team = await prisma.team.update({ where: { id }, data: { name: result.data.name } });
         res.json({ team });
@@ -108,8 +109,8 @@ TeamRouter.delete('/:id', async (req, res, next) => {
     const { id } = req.params;
     try {
         const membership = await getMembership(id, req.userId);
-        if (!membership) return res.status(404).json({ message: 'Team not found' });
-        if (membership.role !== 'OWNER') return res.status(403).json({ message: 'Only the owner can delete the team' });
+        if (!membership) return res.status(404).json({ error: 'TEAM_NOT_FOUND', message: 'Team not found' });
+        if (membership.role !== 'OWNER') return res.status(403).json({ error: 'TEAM_OWNER_ONLY_DELETE', message: 'Only the owner can delete the team' });
 
         await prisma.team.delete({ where: { id } });
         res.json({ message: 'Team deleted' });
@@ -122,7 +123,7 @@ TeamRouter.get('/:id/members', async (req, res, next) => {
     const { id } = req.params;
     try {
         const membership = await getMembership(id, req.userId);
-        if (!membership) return res.status(404).json({ message: 'Team not found' });
+        if (!membership) return res.status(404).json({ error: 'TEAM_NOT_FOUND', message: 'Team not found' });
 
         const [members, invitations] = await Promise.all([
             prisma.teamMember.findMany({
@@ -153,15 +154,15 @@ TeamRouter.delete('/:id/members/:userId', async (req, res, next) => {
     const { id, userId: targetUserId } = req.params;
     try {
         const membership = await getMembership(id, req.userId);
-        if (!membership) return res.status(404).json({ message: 'Team not found' });
-        if (membership.role !== 'OWNER') return res.status(403).json({ message: 'Only the owner can remove members' });
+        if (!membership) return res.status(404).json({ error: 'TEAM_NOT_FOUND', message: 'Team not found' });
+        if (membership.role !== 'OWNER') return res.status(403).json({ error: 'TEAM_OWNER_ONLY_REMOVE', message: 'Only the owner can remove members' });
 
         const target = await getMembership(id, targetUserId);
-        if (!target) return res.status(404).json({ message: 'Member not found' });
+        if (!target) return res.status(404).json({ error: 'TEAM_MEMBER_NOT_FOUND', message: 'Member not found' });
 
         if (target.role === 'OWNER') {
             const ownerCount = await prisma.teamMember.count({ where: { teamId: id, role: 'OWNER' } });
-            if (ownerCount <= 1) return res.status(400).json({ message: 'Cannot remove the last owner' });
+            if (ownerCount <= 1) return res.status(400).json({ error: 'TEAM_LAST_OWNER_REMOVE', message: 'Cannot remove the last owner' });
         }
 
         await prisma.teamMember.delete({ where: { teamId_userId: { teamId: id, userId: targetUserId } } });
@@ -174,12 +175,12 @@ TeamRouter.post('/:id/leave', async (req, res, next) => {
     const { id } = req.params;
     try {
         const membership = await getMembership(id, req.userId);
-        if (!membership) return res.status(404).json({ message: 'Team not found' });
+        if (!membership) return res.status(404).json({ error: 'TEAM_NOT_FOUND', message: 'Team not found' });
 
         if (membership.role === 'OWNER') {
             const ownerCount = await prisma.teamMember.count({ where: { teamId: id, role: 'OWNER' } });
             if (ownerCount <= 1) {
-                return res.status(400).json({ message: 'The last owner cannot leave. Delete the team or assign another owner first.' });
+                return res.status(400).json({ error: 'TEAM_LAST_OWNER_LEAVE', message: 'The last owner cannot leave. Delete the team or assign another owner first.' });
             }
         }
 
@@ -195,15 +196,15 @@ TeamRouter.post('/:id/leave', async (req, res, next) => {
 TeamRouter.post('/:id/invitations', async (req, res, next) => {
     const { id } = req.params;
     const result = inviteSchema.safeParse(req.body);
-    if (!result.success) return res.status(400).json({ message: result.error.issues[0].message });
+    if (!result.success) return validationError(res, result);
 
     const email = result.data.email.toLowerCase();
     const role  = result.data.role ?? 'MEMBER';
 
     try {
         const membership = await getMembership(id, req.userId);
-        if (!membership) return res.status(404).json({ message: 'Team not found' });
-        if (membership.role !== 'OWNER') return res.status(403).json({ message: 'Only the owner can invite members' });
+        if (!membership) return res.status(404).json({ error: 'TEAM_NOT_FOUND', message: 'Team not found' });
+        if (membership.role !== 'OWNER') return res.status(403).json({ error: 'TEAM_OWNER_ONLY_INVITE', message: 'Only the owner can invite members' });
 
         const team = await prisma.team.findUnique({ where: { id }, select: { name: true } });
         const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -211,7 +212,7 @@ TeamRouter.post('/:id/invitations', async (req, res, next) => {
         // Existing user → add as a member right away (no duplicate accounts).
         if (existingUser) {
             const already = await getMembership(id, existingUser.id);
-            if (already) return res.status(409).json({ message: 'This user is already a member' });
+            if (already) return res.status(409).json({ error: 'TEAM_ALREADY_MEMBER', message: 'This user is already a member' });
 
             await prisma.teamMember.create({ data: { teamId: id, userId: existingUser.id, role } });
 
@@ -260,11 +261,11 @@ TeamRouter.delete('/:id/invitations/:invitationId', async (req, res, next) => {
     const { id, invitationId } = req.params;
     try {
         const membership = await getMembership(id, req.userId);
-        if (!membership) return res.status(404).json({ message: 'Team not found' });
-        if (membership.role !== 'OWNER') return res.status(403).json({ message: 'Only the owner can revoke invitations' });
+        if (!membership) return res.status(404).json({ error: 'TEAM_NOT_FOUND', message: 'Team not found' });
+        if (membership.role !== 'OWNER') return res.status(403).json({ error: 'TEAM_OWNER_ONLY_REVOKE', message: 'Only the owner can revoke invitations' });
 
         const deleted = await prisma.teamInvitation.deleteMany({ where: { id: invitationId, teamId: id } });
-        if (!deleted.count) return res.status(404).json({ message: 'Invitation not found' });
+        if (!deleted.count) return res.status(404).json({ error: 'INVITATION_NOT_FOUND', message: 'Invitation not found' });
         res.json({ message: 'Invitation revoked' });
     } catch (err) { next(err); }
 });
@@ -272,7 +273,7 @@ TeamRouter.delete('/:id/invitations/:invitationId', async (req, res, next) => {
 // Accept an invitation as the logged-in user (email must match the invite).
 TeamRouter.post('/invitations/accept', async (req, res, next) => {
     const result = acceptSchema.safeParse(req.body);
-    if (!result.success) return res.status(400).json({ message: result.error.issues[0].message });
+    if (!result.success) return validationError(res, result);
 
     try {
         const user = await prisma.user.findUnique({ where: { id: req.userId }, select: { email: true } });
@@ -281,10 +282,10 @@ TeamRouter.post('/invitations/accept', async (req, res, next) => {
         });
 
         if (!invitation || invitation.expiresAt < new Date()) {
-            return res.status(400).json({ message: 'Invalid or expired invitation' });
+            return res.status(400).json({ error: 'INVITATION_INVALID', message: 'Invalid or expired invitation' });
         }
         if (invitation.email.toLowerCase() !== user.email.toLowerCase()) {
-            return res.status(403).json({ message: 'This invitation was sent to a different email address' });
+            return res.status(403).json({ error: 'INVITATION_EMAIL_MISMATCH', message: 'This invitation was sent to a different email address' });
         }
 
         await prisma.$transaction([

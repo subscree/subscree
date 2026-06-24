@@ -1,6 +1,7 @@
 'use client';
 
 import { trackEvent, identifyUser, apiEventName, eventDataForBody } from '@/lib/analytics';
+import { resolveErrorMessage } from '@/lib/errors';
 
 function getToken() {
     if (typeof document === 'undefined') return null;
@@ -33,7 +34,7 @@ export async function fetchApi(path, options = {}) {
         if (failed === 'login' || failed === 'signup') {
             trackEvent(`${failed}_failed`, { status: response.status });
         }
-        throw new Error(errorData.message || `Request failed: ${response.status}`);
+        throw new Error(resolveErrorMessage(errorData, response.status));
     }
 
     const data = response.status === 204 ? null : await response.json();
