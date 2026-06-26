@@ -22,7 +22,32 @@ const WEBSITE_ID = process.env.EXPO_PUBLIC_UMAMI_WEBSITE_ID;
 const HOSTNAME   = process.env.EXPO_PUBLIC_UMAMI_DOMAIN || 'app.subscree';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '0.0.0';
-const USER_AGENT  = `Subscree/${APP_VERSION} (${Platform.OS} ${Platform.Version})`;
+
+// Umami derives browser / OS / device server-side by parsing the User-Agent
+// header — there is no client hint for any of it. A custom string like
+// "Subscree/1.0.0 (ios 18.0)" is unrecognized, so Umami reports an unknown
+// browser/OS and falls back to a screen-width guess for the device (which
+// misclassifies the phone as a "laptop"). We therefore send a browser-shaped
+// UA that Umami can parse into the real mobile OS, while keeping the app
+// product token at the end so we can still tell native traffic apart.
+function buildUserAgent() {
+    if (Platform.OS === 'ios') {
+        const ver = String(Platform.Version || '18.0');
+        const verUnderscore = ver.replace(/\./g, '_');
+        const device = Platform.isPad ? 'iPad' : 'iPhone';
+        const osToken = Platform.isPad
+            ? `CPU OS ${verUnderscore} like Mac OS X`
+            : `CPU iPhone OS ${verUnderscore} like Mac OS X`;
+        return `Mozilla/5.0 (${device}; ${osToken}) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/${ver} Mobile/15E148 Safari/604.1 Subscree/${APP_VERSION}`;
+    }
+    if (Platform.OS === 'android') {
+        const ver = String(Platform.Version || '14');
+        return `Mozilla/5.0 (Linux; Android ${ver}; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36 Subscree/${APP_VERSION}`;
+    }
+    return `Subscree/${APP_VERSION}`;
+}
+
+const USER_AGENT = buildUserAgent();
 
 const enabled = () => Boolean(HOST && WEBSITE_ID);
 
