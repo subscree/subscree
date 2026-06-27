@@ -6,12 +6,17 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "locales": {
+        "en": "./locales/en.json",
+        "uk": "./locales/uk.json"
+    },
     "ios": {
       "supportsTablet": false,
       "icon": "./assets/ios/icon.png",
       "bundleIdentifier": "app.subscree",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleAllowMixedLocalizations": true
       }
     },
     "android": {
