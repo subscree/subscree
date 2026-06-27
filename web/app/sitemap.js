@@ -8,5 +8,6 @@ export default function sitemap() {
         { url: `${siteUrl}/privacy`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
         { url: `${siteUrl}/terms`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
         { url: `${siteUrl}/delete-account`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.2 },
+        { url: `${siteUrl}/llms.txt`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.2 },
     ];
 }

@@ -392,6 +392,7 @@ export default function HomePage() {
                         >
                             GitHub
                         </Link>
+                        <a href="/llms.txt" className="transition-colors hover:text-foreground">llms.txt</a>
                     </div>
                 </div>
                 <div className="border-t">
