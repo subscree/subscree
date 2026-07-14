@@ -10,6 +10,7 @@ import { Logo } from '@/components/ui/Logo';
 import { LandingLangSwitcher } from '@/components/LandingLangSwitcher';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://subscree.app';
+const appStoreUrl = 'https://apps.apple.com/app/subscree/id6783733155';
 
 // Localized, page-specific SEO metadata (merges over the defaults in layout.js).
 export async function generateMetadata() {
@@ -81,7 +82,6 @@ function PhoneShot({ caption, hint, src, alt }) {
     );
 }
 
-// Inactive store badges (links intentionally omitted until the apps ship).
 function AppleIcon(props) {
     return (
         <svg viewBox="0 0 384 512" className="h-6 w-6" fill="currentColor" aria-hidden {...props}>
@@ -97,7 +97,35 @@ function GooglePlayIcon(props) {
     );
 }
 
-function StoreBadge({ icon, line1, line2, soon }) {
+function StoreBadge({ icon, line1, line2, soon, href }) {
+    const content = (
+        <>
+            {icon}
+            <span className="flex flex-col text-left leading-tight">
+                <span className="text-[10px] uppercase tracking-wide opacity-80">{line1}</span>
+                <span className="text-base font-semibold -mt-0.5">{line2}</span>
+            </span>
+            {soon && (
+                <span className="absolute -top-2 -right-2 rounded-full border border-border bg-background px-2 py-0.5 text-[10px] font-medium text-foreground">
+                    {soon}
+                </span>
+            )}
+        </>
+    );
+
+    if (href) {
+        return (
+            <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="relative inline-flex h-[52px] items-center gap-3 rounded-xl bg-foreground px-4 text-background transition-opacity hover:opacity-90"
+            >
+                {content}
+            </a>
+        );
+    }
+
     return (
         <div
             role="button"
@@ -105,14 +133,7 @@ function StoreBadge({ icon, line1, line2, soon }) {
             title={soon}
             className="relative inline-flex h-[52px] items-center gap-3 rounded-xl bg-foreground px-4 text-background opacity-70 cursor-not-allowed select-none"
         >
-            {icon}
-            <span className="flex flex-col text-left leading-tight">
-                <span className="text-[10px] uppercase tracking-wide opacity-80">{line1}</span>
-                <span className="text-base font-semibold -mt-0.5">{line2}</span>
-            </span>
-            <span className="absolute -top-2 -right-2 rounded-full border border-border bg-background px-2 py-0.5 text-[10px] font-medium text-foreground">
-                {soon}
-            </span>
+            {content}
         </div>
     );
 }
@@ -331,7 +352,7 @@ export default function HomePage() {
                                     icon={<AppleIcon />}
                                     line1={t('storeAppStoreLine1')}
                                     line2={t('storeAppStoreLine2')}
-                                    soon={t('comingSoon')}
+                                    href={appStoreUrl}
                                 />
                                 <StoreBadge
                                     icon={<GooglePlayIcon />}

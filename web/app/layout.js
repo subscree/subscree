@@ -45,6 +45,9 @@ export const metadata = {
         follow: true,
         googleBot: { index: true, follow: true, "max-image-preview": "large" },
     },
+    other: {
+        "apple-itunes-app": "app-id=6783733155",
+    },
 };
 
 export default async function RootLayout({ children }) {
