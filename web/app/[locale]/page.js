@@ -1,6 +1,5 @@
-import { useTranslations } from 'next-intl';
-import { getTranslations } from 'next-intl/server';
-import Link from 'next/link';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { Link } from '@/i18n/navigation';
 import Image from 'next/image';
 import {
     LayoutList, PieChart, BellRing, Users, Coins, ShieldCheck,
@@ -8,16 +7,18 @@ import {
 } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
 import { LandingLangSwitcher } from '@/components/LandingLangSwitcher';
+import { buildAlternates, localizedUrl } from '@/lib/seo';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://subscree.app';
 const appStoreUrl = 'https://apps.apple.com/app/subscree/id6783733155';
 
 // Localized, page-specific SEO metadata (merges over the defaults in layout.js).
-export async function generateMetadata() {
+export async function generateMetadata({ params }) {
+    const { locale } = await params;
     const t = await getTranslations('Landing');
     return {
         title: { absolute: t('seoTitle') },
         description: t('seoDescription'),
+        alternates: buildAlternates('', locale),
         openGraph: {
             title: t('seoTitle'),
             description: t('seoDescription'),
@@ -162,9 +163,12 @@ function ShowcaseRow({ title, description, shot, reversed }) {
     );
 }
 
-export default function HomePage() {
-    const t = useTranslations('Landing');
-    const tAuth = useTranslations('Auth');
+export default async function HomePage({ params }) {
+    const { locale } = await params;
+    setRequestLocale(locale);
+
+    const t = await getTranslations('Landing');
+    const tAuth = await getTranslations('Auth');
 
     const features = [
         { icon: LayoutList,  title: t('feature1Title'), description: t('feature1Desc') },
@@ -186,7 +190,7 @@ export default function HomePage() {
         '@context': 'https://schema.org',
         '@type': 'SoftwareApplication',
         name: 'Subscree',
-        url: siteUrl,
+        url: localizedUrl('', locale),
         applicationCategory: 'FinanceApplication',
         operatingSystem: 'Web, iOS, Android',
         description: t('seoDescription'),

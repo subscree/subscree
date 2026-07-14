@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { Logo } from '@/components/ui/Logo';
 
 // Chrome labels for legal pages, kept here so both Privacy and Terms share them.

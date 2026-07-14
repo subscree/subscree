@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import { useTranslations } from 'next-intl';
-import Link from "next/link";
+import { Link } from '@/i18n/navigation';
 import { forgotPassword } from "@/lib/api";
 import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSet, FieldLegend } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 
-export default function ForgotPasswordPage() {
+export function ForgotPasswordForm() {
     const t = useTranslations('Auth');
 
     const [email, setEmail] = useState('');

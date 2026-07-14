@@ -1,6 +1,6 @@
 'use client';
 
-import Link from "next/link";
+import { Link, useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { Button } from "../ui/button";
 import { Settings } from "lucide-react";
@@ -8,10 +8,11 @@ import { Settings } from "lucide-react";
 export const Header = () => {
     const t = useTranslations('Header');
     const tCommon = useTranslations('Common');
+    const router = useRouter();
 
     const handleLogout = () => {
         document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-        window.location.href = "/login";
+        router.push("/login");
     };
 
     return (

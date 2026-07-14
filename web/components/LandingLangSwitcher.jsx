@@ -1,19 +1,17 @@
 'use client';
 
 import { useLocale } from 'next-intl';
+import { usePathname, useRouter } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 
-// Locale is a `locale` cookie read server-side by next-intl (see i18n/request.js).
-// Switching sets the cookie and reloads so the server re-renders in the new language.
+// Locale is resolved from the URL (see middleware.js / i18n/routing.js).
+// Switching navigates to the same page under the target locale's prefix.
 const LOCALES = ['en', 'uk'];
-
-function setLocale(locale) {
-    document.cookie = `locale=${locale}; path=/; max-age=31536000`;
-    window.location.reload();
-}
 
 export function LandingLangSwitcher() {
     const active = useLocale();
+    const pathname = usePathname();
+    const router = useRouter();
 
     return (
         <div className="flex items-center rounded-full border p-0.5" role="group" aria-label="Language">
@@ -21,7 +19,7 @@ export function LandingLangSwitcher() {
                 <button
                     key={locale}
                     type="button"
-                    onClick={() => locale !== active && setLocale(locale)}
+                    onClick={() => locale !== active && router.replace(pathname, { locale })}
                     aria-pressed={locale === active}
                     className={cn(
                         'rounded-full px-2.5 py-1 text-xs font-medium uppercase transition-colors',

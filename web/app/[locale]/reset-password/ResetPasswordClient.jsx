@@ -1,9 +1,9 @@
 'use client';
 
 import { Suspense, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { Link, useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
-import Link from "next/link";
 import { resetPassword } from "@/lib/api";
 import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSet, FieldLegend } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -108,7 +108,7 @@ function ResetPasswordForm() {
     );
 }
 
-export default function ResetPasswordPage() {
+export function ResetPasswordClient() {
     return (
         <div className="min-h-screen flex items-center justify-center px-4">
             <div className="w-full max-w-md p-8 border rounded-lg">

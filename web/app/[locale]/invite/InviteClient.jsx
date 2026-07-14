@@ -1,9 +1,9 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 import { getInvitationInfo, acceptInvitation } from '@/lib/api';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -102,7 +102,7 @@ function InviteInner() {
     );
 }
 
-export default function InvitePage() {
+export function InviteClient() {
     return (
         <Suspense fallback={null}>
             <InviteInner />

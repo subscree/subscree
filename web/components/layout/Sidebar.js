@@ -1,7 +1,6 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
@@ -106,11 +105,12 @@ function NavLink({ item, onClick }) {
 function SidebarContent({ onLinkClick }) {
     const t = useTranslations('Nav');
     const navItems = useNavItems();
+    const router = useRouter();
 
     const handleLogout = () => {
         trackEvent('logout');
         document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        window.location.href = '/login';
+        router.push('/login');
     };
 
     return (

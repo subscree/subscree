@@ -1,11 +1,13 @@
 import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
-import { NextIntlClientProvider } from 'next-intl';
-import { getLocale, getMessages } from 'next-intl/server';
+import { NextIntlClientProvider, hasLocale } from 'next-intl';
+import { getMessages, setRequestLocale } from 'next-intl/server';
+import { notFound } from 'next/navigation';
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { Analytics } from "@/components/providers/Analytics";
 import { ErrorTranslatorBridge } from "@/components/ErrorTranslatorBridge";
-import "./globals.css";
+import { routing } from "@/i18n/routing";
+import "../globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -25,7 +27,6 @@ export const metadata = {
         "subscription tracker", "subscription manager", "recurring payments",
         "renewal reminders", "spending tracker", "subscriptions",
     ],
-    alternates: { canonical: "/" },
     openGraph: {
         type: "website",
         siteName: "Subscree",
@@ -50,8 +51,17 @@ export const metadata = {
     },
 };
 
-export default async function RootLayout({ children }) {
-    const locale   = await getLocale();
+export function generateStaticParams() {
+    return routing.locales.map((locale) => ({ locale }));
+}
+
+export default async function RootLayout({ children, params }) {
+    const { locale } = await params;
+    if (!hasLocale(routing.locales, locale)) notFound();
+
+    // Enables static rendering for this locale in nested Server Components.
+    setRequestLocale(locale);
+
     const messages = await getMessages();
 
     // Read at request time (this layout renders dynamically via next-intl), so

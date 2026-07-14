@@ -7,10 +7,9 @@ import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSet, FieldLegend 
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { Link, useRouter } from '@/i18n/navigation';
 
-export default function RegisterPage() {
+export function RegisterForm() {
     const t = useTranslations('Auth');
 
     const [name, setName] = useState('');

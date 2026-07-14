@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useTranslations } from 'next-intl';
+import { Link, useRouter, usePathname } from '@/i18n/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -17,11 +17,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { getMe, updateMe, updatePassword, getCurrencies, deleteAccount, restoreAccount } from "@/lib/api";
 import { ArrowLeft, CheckCircle2, Sun, Moon, Monitor, Trash2, AlertTriangle } from "lucide-react";
-
-function signOut() {
-    document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-    window.location.href = '/login';
-}
 
 function SuccessAlert({ message }) {
     return (
@@ -42,6 +37,9 @@ export default function SettingsPage() {
     const t = useTranslations('Settings');
     const tLang = useTranslations('Language');
     const { theme, setTheme } = useTheme();
+    const router = useRouter();
+    const pathname = usePathname();
+    const activeLocale = useLocale();
 
     const [user, setUser] = useState(null);
     const [currencies, setCurrencies] = useState([]);
@@ -85,11 +83,7 @@ export default function SettingsPage() {
     const [restoreBusy, setRestoreBusy] = useState(false);
 
     useEffect(() => {
-        const currentLocale = document.cookie
-            .split('; ')
-            .find(r => r.startsWith('locale='))
-            ?.split('=')[1] ?? 'en';
-        setPrefLocale(currentLocale);
+        setPrefLocale(activeLocale);
 
         Promise.all([getMe(), getCurrencies()])
             .then(([userRes, currRes]) => {
@@ -147,9 +141,10 @@ export default function SettingsPage() {
         try {
             const res = await updateMe({ preferredCurrency: prefCurrency });
             setUser(res.user);
-            document.cookie = `locale=${prefLocale}; path=/; max-age=31536000`;
             setPrefSuccess(true);
-            setTimeout(() => window.location.reload(), 800);
+            if (prefLocale !== activeLocale) {
+                router.replace(pathname, { locale: prefLocale });
+            }
         } catch (err) {
             setPrefError(err.message);
         } finally {
@@ -184,7 +179,9 @@ export default function SettingsPage() {
         setDeleteBusy(true);
         try {
             await deleteAccount(deletePassword);
-            signOut(); // navigates away; account is restorable for 7 days
+            // navigates away; account is restorable for 7 days
+            document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            router.push('/login');
         } catch (err) {
             setDeleteError(err.message);
             setDeleteBusy(false);

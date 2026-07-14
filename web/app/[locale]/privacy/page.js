@@ -1,5 +1,6 @@
-import { getLocale } from 'next-intl/server';
+import { setRequestLocale } from 'next-intl/server';
 import { LegalShell } from '@/components/legal/LegalShell';
+import { buildAlternates } from '@/lib/seo';
 
 // NOTE: This is a tailored template, not legal advice. Before publishing, fill in
 // the operator legal name and jurisdiction placeholders below and have it reviewed.
@@ -167,14 +168,15 @@ const content = {
     },
 };
 
-export async function generateMetadata() {
-    const locale = await getLocale();
+export async function generateMetadata({ params }) {
+    const { locale } = await params;
     const c = content[locale] ?? content.en;
-    return { title: c.title, description: c.intro, alternates: { canonical: '/privacy' } };
+    return { title: c.title, description: c.intro, alternates: buildAlternates('/privacy', locale) };
 }
 
-export default async function PrivacyPage() {
-    const locale = await getLocale();
+export default async function PrivacyPage({ params }) {
+    const { locale } = await params;
+    setRequestLocale(locale);
     const c = content[locale] ?? content.en;
     return <LegalShell locale={locale} title={c.title} updatedISO={UPDATED} intro={c.intro} sections={c.sections} />;
 }
