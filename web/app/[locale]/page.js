@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
 import { LandingLangSwitcher } from '@/components/LandingLangSwitcher';
+import { HeaderAuthLinks, FooterAuthLink } from '@/components/LandingAuthLinks';
 import { buildAlternates, localizedUrl } from '@/lib/seo';
 
 const appStoreUrl = 'https://apps.apple.com/app/subscree/id6783733155';
@@ -168,7 +169,6 @@ export default async function HomePage({ params }) {
     setRequestLocale(locale);
 
     const t = await getTranslations('Landing');
-    const tAuth = await getTranslations('Auth');
 
     const features = [
         { icon: LayoutList,  title: t('feature1Title'), description: t('feature1Desc') },
@@ -218,12 +218,7 @@ export default async function HomePage({ params }) {
                             {t('navHowItWorks')}
                         </a>
                         <LandingLangSwitcher />
-                        <Link href="/login" className="hidden px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground sm:inline">
-                            {tAuth('login')}
-                        </Link>
-                        <Link href="/register" className="rounded-full bg-foreground px-4 py-1.5 text-sm font-medium text-background transition-opacity hover:opacity-90">
-                            {tAuth('register')}
-                        </Link>
+                        <HeaderAuthLinks />
                     </nav>
                 </div>
             </header>
@@ -408,7 +403,7 @@ export default async function HomePage({ params }) {
                         <a href="#features" className="transition-colors hover:text-foreground">{t('navFeatures')}</a>
                         <Link href="/privacy" className="transition-colors hover:text-foreground">{t('privacy')}</Link>
                         <Link href="/terms" className="transition-colors hover:text-foreground">{t('terms')}</Link>
-                        <Link href="/login" className="transition-colors hover:text-foreground">{tAuth('login')}</Link>
+                        <FooterAuthLink />
                         <Link
                             href="https://github.com/subscree/subscree"
                             target="_blank"
