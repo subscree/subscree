@@ -7,8 +7,8 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "locales": {
-        "en": "./locales/en.json",
-        "uk": "./locales/uk.json"
+      "en": "./locales/en.json",
+      "uk": "./locales/uk.json"
     },
     "ios": {
       "supportsTablet": false,
@@ -25,7 +25,8 @@
         "foregroundImage": "./assets/android/icon-foreground.png",
         "backgroundImage": "./assets/android/icon-background.png",
         "monochromeImage": "./assets/android/icon-monochrome.png"
-      }
+      },
+      "package": "app.subscree"
     },
     "plugins": [
       "expo-localization",
