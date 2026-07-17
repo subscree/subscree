@@ -55,6 +55,15 @@ export function generateStaticParams() {
     return routing.locales.map((locale) => ({ locale }));
 }
 
+// Force per-request rendering: the analytics <Script> tags below read
+// UMAMI_SCRIPT_URL / UMAMI_WEBSITE_ID / GA_MEASUREMENT_ID from process.env, and
+// this layout is otherwise eligible for static generation (setRequestLocale +
+// generateStaticParams above). Without this, Next prerenders it at `next build`
+// time — before docker-compose injects those env vars at container start — and
+// bakes the "unconfigured" branch into the static HTML, silently disabling both
+// GA4 and Umami in production.
+export const dynamic = 'force-dynamic';
+
 export default async function RootLayout({ children, params }) {
     const { locale } = await params;
     if (!hasLocale(routing.locales, locale)) notFound();
